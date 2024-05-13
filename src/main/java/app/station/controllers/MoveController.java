@@ -57,4 +57,15 @@ public class MoveController {
       endDate
     );
   }
+
+  @GetMapping("/details")
+  public List<StationMoveDetail> getStationsDetails(
+    @RequestParam("start_date") LocalDate startDate,
+    @RequestParam("end_date") LocalDate endDate
+  ){
+    return moveService.getStationsDetails(
+      startDate,
+      endDate
+    );
+  }
 }

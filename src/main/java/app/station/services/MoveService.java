@@ -44,6 +44,13 @@ public class MoveService {
     return moveRepository.findStationDetailsWithIntervals(stationId, startDate, endDate);
   }
 
+  public List<StationMoveDetail> getStationsDetails(
+    LocalDate startDate,
+    LocalDate endDate
+  ) {
+    return moveRepository.findStationsDetailsWithIntervals(startDate, endDate);
+  }
+
   public Move supplyProduct(String productId, Double quantity, LocalDate date) {
     if(date == null)
       return moveRepository.saveNewProductQuantity(productId, quantity);

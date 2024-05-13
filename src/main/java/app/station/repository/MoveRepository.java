@@ -91,6 +91,16 @@ public class MoveRepository extends CommonRepository<Move, String> {
       all(stationId, startDate, endDate);
   }
 
+  public List<StationMoveDetail> findStationsDetailsWithIntervals(
+    LocalDate startDate,
+    LocalDate endDate
+  ){
+    String sql = "SELECT * FROM station_details WHERE move_date BETWEEN ? AND ?";
+    return database
+      .prepare(sql, StationMoveDetail.class).
+      all(startDate, endDate);
+  }
+
   private <T extends DatabaseTemplate> Product updateProduct(T database, Double quantity, String productId){
     String sqlProductUpdate = """
         WITH remaining AS (
