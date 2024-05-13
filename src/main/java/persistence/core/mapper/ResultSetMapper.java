@@ -14,13 +14,13 @@ import java.util.*;
 
 public class ResultSetMapper<T> {
   private final Class<T> clazz;
-  private boolean primitive = false;
+  private boolean primitiveOrWrapper = false;
   private final HashMap<String, FieldProperty> fieldMaps = new HashMap<>();
 
   public ResultSetMapper(Class<T> clazz) {
     this.clazz = clazz;
     if(Utils.isPrimitiveOrWrapper(clazz)){
-      this.primitive = true;
+      this.primitiveOrWrapper = true;
     }else {
       String tableName = getTableName(clazz);
       for (Field field : clazz.getDeclaredFields()) {
@@ -39,8 +39,9 @@ public class ResultSetMapper<T> {
   }
 
   public T map(ResultSet rs) throws Exception {
-    if(primitive)
-      return clazz.cast(rs.getObject(1));
+    if(primitiveOrWrapper){
+      return rs.getObject(1, clazz);
+    }
 
     T object = newInstance();
     ResultSetMetaData metadata = rs.getMetaData();
@@ -53,7 +54,13 @@ public class ResultSetMapper<T> {
 
       if(!fieldProperty.matchTable(metadata.getTableName(i))) continue;
 
-      Object value = rs.getObject(i);
+      Object value;
+      if (Utils.isPrimitiveOrWrapper(fieldProperty.getReturnType())) {
+         value = rs.getObject(i, fieldProperty.getReturnType());
+      }else {
+         value = rs.getObject(i);
+      }
+
       Field field = fieldProperty.getField();
       field.setAccessible(true);
       if(fieldProperty.isReferencing()){
@@ -70,23 +77,21 @@ public class ResultSetMapper<T> {
 
   private Object castObject(FieldProperty fieldProperty, Object value) throws Exception {
     Class<?> fieldReturnType = fieldProperty.getReturnType();
-    if(value == null) return null;
-    else if(
-      value instanceof byte[] &&
-      byte[].class.equals(fieldReturnType)
-    ){
+    if(value == null) {
+      return null;
+    }else if(value instanceof byte[] && byte[].class.equals(fieldReturnType)){
       return value;
-    }else if (
-      fieldReturnType
-        .equals(value.getClass())
-    )
+    }else if (fieldReturnType.equals(value.getClass()))
       return fieldReturnType.cast(value);
     else if(fieldReturnType.isEnum()){
       return parseEnumValue(fieldProperty.getField(), value);
-    } else if (
-      value instanceof Array &&
-      fieldReturnType.equals(List.class)
-    ){
+    }else if(value instanceof Time){
+      return timeCastType(fieldReturnType, value);
+    }else if(value instanceof Timestamp){
+      return timestampCastType(fieldReturnType, value);
+    }else if(value instanceof java.sql.Date){
+      return dateCastType(fieldReturnType, value);
+    }else if (value instanceof Array && fieldReturnType.equals(List.class)){
       ResultSet resultSet = ((Array) value).getResultSet();
       List<Object> list = new ArrayList<>();
       while (resultSet.next()) {
@@ -94,32 +99,8 @@ public class ResultSetMapper<T> {
         list.add(v);
       }
       return list;
-    }else if(value instanceof Time){
-      if(fieldReturnType.equals(Instant.class)){
-        return ((Time) value).toInstant();
-      }else if(fieldReturnType.equals(LocalTime.class)){
-        return ((Time) value).toLocalTime();
-      }else if(fieldReturnType.equals(String.class)){
-        return value.toString();
-      }
-    }else if(value instanceof Timestamp){
-      if(fieldReturnType.equals(Instant.class)){
-        return ((Timestamp) value).toInstant();
-      }else if(fieldReturnType.equals(LocalDateTime.class)){
-        return ((Timestamp) value).toLocalDateTime();
-      }else if(fieldReturnType.equals(String.class)){
-        return value.toString();
-      }
-    }else if(value instanceof java.sql.Date){
-      if (fieldReturnType.equals(Instant.class)){
-        return ((java.sql.Date) value).toInstant();
-      }else if(fieldReturnType.equals(LocalDate.class)){
-        return ((Date) value).toLocalDate();
-      }else if(fieldReturnType.equals(String.class)){
-        return value.toString();
-      }
     }
-    throw new DatabaseException("unhandled return type: " + fieldReturnType);
+    throw throwUnhandledType(fieldReturnType);
   }
 
   private String getTableName(Class<?> clazz){
@@ -139,6 +120,43 @@ public class ResultSetMapper<T> {
 
   private String oneOfAAndB(String a, String b){
     return ((a != null && !a.trim().isEmpty()) ? a : b).trim();
+  }
+
+  private DatabaseException throwUnhandledType(Class<?> clazz){
+    return new DatabaseException("unhandled return type: " + clazz);
+  }
+
+  private Object timestampCastType(Class<?> fieldReturnType, Object value){
+    if(fieldReturnType.equals(Instant.class)){
+      return ((Timestamp) value).toInstant();
+    }else if(fieldReturnType.equals(LocalDateTime.class)){
+      return ((Timestamp) value).toLocalDateTime();
+    }else if(fieldReturnType.equals(String.class)){
+      return value.toString();
+    }
+    throw throwUnhandledType(fieldReturnType);
+  }
+
+  private Object dateCastType(Class<?> fieldReturnType, Object value){
+    if (fieldReturnType.equals(Instant.class)){
+      return ((java.sql.Date) value).toInstant();
+    }else if(fieldReturnType.equals(LocalDate.class)){
+      return ((Date) value).toLocalDate();
+    }else if(fieldReturnType.equals(String.class)){
+      return value.toString();
+    }
+    throw throwUnhandledType(fieldReturnType);
+  }
+
+  private Object timeCastType(Class<?> fieldReturnType, Object value){
+    if(fieldReturnType.equals(Instant.class)){
+      return ((Time) value).toInstant();
+    }else if(fieldReturnType.equals(LocalTime.class)){
+      return ((Time) value).toLocalTime();
+    }else if(fieldReturnType.equals(String.class)){
+      return value.toString();
+    }
+    throw throwUnhandledType(fieldReturnType);
   }
 
   private Object parseEnumValue(Field field, Object value){
