@@ -85,4 +85,11 @@ public class ProductRepository extends CommonRepository<Product, String> {
       """;
     database.execute(sqlEvaporationChecker);
   }
+
+  public Product subtractQuantityById(String id, Double requiredQuantity) {
+    String sql = "UPDATE \"@table\" SET quantity = (quantity - ?), updated_at = now() WHERE id = ?";
+    return database
+      .prepare(sql, Product.class)
+      .get(requiredQuantity, id);
+  }
 }

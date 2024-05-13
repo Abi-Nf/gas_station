@@ -51,11 +51,11 @@ public class MoveService {
   }
 
   public Move buyProduct(BuyProductPayload payload) {
-    String productId = payload.getProductId();
     Product product = productRepository
-      .findByIdAndCheckEvaporation(productId)
+      .findByIdAndCheckEvaporation(payload.getProductId())
       .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
     Double requiredQuantity = getRequiredQuantity(product, payload);
+    product = productRepository.subtractQuantityById(product.getId(), requiredQuantity);
     return moveRepository.save(Move
       .builder()
       .type(MoveType.OUTER)
