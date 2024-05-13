@@ -85,7 +85,7 @@ public class MoveRepository extends CommonRepository<Move, String> {
     LocalDate startDate,
     LocalDate endDate
   ) {
-    String sql = "SELECT * FROM station_details WHERE station_id = ? AND move_date BETWEEN ? AND ?";
+    String sql = "SELECT * FROM station_details WHERE station_id = ? AND move_date BETWEEN ? AND ? ORDER BY move_date DESC";
     return database
       .prepare(sql, StationMoveDetail.class).
       all(stationId, startDate, endDate);
@@ -95,7 +95,7 @@ public class MoveRepository extends CommonRepository<Move, String> {
     LocalDate startDate,
     LocalDate endDate
   ){
-    String sql = "SELECT * FROM station_details WHERE move_date BETWEEN ? AND ?";
+    String sql = "SELECT * FROM station_details WHERE move_date BETWEEN ? AND ? ORDER BY move_date DESC, station_id, product_name";
     return database
       .prepare(sql, StationMoveDetail.class).
       all(startDate, endDate);
