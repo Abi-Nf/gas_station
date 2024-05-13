@@ -37,6 +37,7 @@ public class BatchQueryImpl implements BatchedQuery {
   public void run() {
     try {
       statement.executeLargeBatch();
+      statement.close();
     }catch (SQLException e) {
       throw new DatabaseException(e);
     }
