@@ -3,6 +3,7 @@ package persistence;
 import persistence.annotations.Column;
 import persistence.annotations.Id;
 import persistence.annotations.JoinColumn;
+import persistence.core.DatabaseException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -54,7 +55,7 @@ public class CommonRepository<Entity, ID> {
         .prepare(sql, entityClass)
         .get(entity);
     }catch (Exception e){
-      throw new RuntimeException(e);
+      throw new DatabaseException(e);
     }
   }
 
