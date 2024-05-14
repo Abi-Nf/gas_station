@@ -97,6 +97,7 @@ public class CommonRepository<Entity, ID> {
       field.setAccessible(true);
       if (field.isAnnotationPresent(Id.class)) {
         this.entityIdColumn = getColumnName(field);
+        field.setAccessible(false);
         break;
       }
       field.setAccessible(false);
