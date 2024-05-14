@@ -2,7 +2,7 @@ package persistence.core.mapper;
 
 public class Utils {
   public static boolean isPrimitiveOrWrapper(Class<?> clazz){
-    return clazz.isPrimitive() || isWrapper(clazz);
+    return clazz.isPrimitive() || clazz.equals(String.class) || isWrapper(clazz);
   }
 
   public static boolean isWrapper(Class<?> clazz){
