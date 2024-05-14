@@ -33,7 +33,7 @@ public class CommonRepository<Entity, ID> {
           String.join(", ", insertion.getColumns()),
           String.join(", ", insertion.getFields())
         );
-        Entity value = database
+        Entity value = transactional
           .prepare(sql, entityClass)
           .get(entity);
         values.add(value);
